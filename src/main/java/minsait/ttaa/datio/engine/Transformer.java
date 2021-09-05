@@ -1,5 +1,8 @@
 package minsait.ttaa.datio.engine;
 
+import java.util.ArrayList;
+import java.util.List;
+import minsait.ttaa.datio.common.Common;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -15,23 +18,36 @@ import static org.apache.spark.sql.functions.*;
 
 public class Transformer extends Writer {
     private SparkSession spark;
-
     public Transformer(@NotNull SparkSession spark) {
         this.spark = spark;
         Dataset<Row> df = readInput();
-
+        
         df.printSchema();
 
         df = cleanData(df);
-        df = exampleWindowFunction(df);
-        df = columnSelection(df);
-
+        df.show();
+        //df = exampleWindowFunction(df);
+        df = selectColumns(df);
+        df.show();
         // for show 100 records after your transformations and show the Dataset schema
-        df.show(100, false);
-        df.printSchema();
+        //df.show(100, false);
+        //df.printSchema();
 
         // Uncomment when you want write your final output
-        //write(df);
+        write(df, Common.EJERCICIO_1);
+        df = setAgeRange(df);
+        write(df, Common.EJERCICIO_2);
+        df = partitionNationTeam(df);
+        write(df, Common.EJERCICIO_3);
+        df = potentialVsOverall(df);
+        write(df, Common.EJERCICIO_4);
+        List<Dataset<Row>> filters = new ArrayList<Dataset<Row>>();
+        filters.add(filterRankAll(df));
+        filters.add(filterAgeRangeByBC(df));
+        filters.add(filterAgeRangeByA(df));
+        filters.add(filterAgeRangeByD(df));       
+        df = unionFilters(filters);
+        write(df, Common.EJERCICIO_5);
     }
 
     private Dataset<Row> columnSelection(Dataset<Row> df) {
@@ -87,9 +103,9 @@ public class Transformer extends Writer {
 
         Column rank = rank().over(w);
 
-        Column rule = when(rank.$less(10), "A")
-                .when(rank.$less(50), "B")
-                .otherwise("C");
+        Column rule = when(rank.$less(10), Common.LETTER_UPPER_CASE_A)
+                .when(rank.$less(50), Common.LETTER_UPPER_CASE_B)
+                .otherwise(Common.LETTER_UPPER_CASE_C);
 
         df = df.withColumn(catHeightByPosition.getName(), rule);
 

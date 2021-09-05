@@ -6,5 +6,6 @@ public final class PlayerInput {
     public static Field overall = new Field("overall");
     public static Field teamPosition = new Field("team_position");
     public static Field heightCm = new Field("height_cm");
+    public static Field nationality = new Field("nationality");
 
 }
